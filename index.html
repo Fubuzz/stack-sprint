@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Stack Sprint</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hud-top">
+      <div class="brand-block">
+        <p class="eyebrow">Night Game #2</p>
+        <h1>Stack Sprint</h1>
+        <p class="tagline">Tap to jump. Hold the combo. Don’t trust the floor.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card">
+          <span class="label">Score</span>
+          <strong id="scoreValue">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="label">Best</span>
+          <strong id="bestValue">0</strong>
+        </div>
+        <div class="stat-card combo-card">
+          <span class="label">Combo</span>
+          <strong id="comboValue">x1</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="game-panel">
+      <canvas id="gameCanvas" width="1280" height="720" aria-label="Stack Sprint game canvas"></canvas>
+
+      <div class="overlay visible" id="startOverlay">
+        <div class="overlay-card hero-card">
+          <p class="overlay-kicker">Arcade runner</p>
+          <h2>Land clean. Grab coins. Keep moving.</h2>
+          <ul>
+            <li><span>Jump</span> Space / click / tap</li>
+            <li><span>Goal</span> Chain clean landings for combo</li>
+            <li><span>Warning</span> Platforms crumble after you touch them</li>
+          </ul>
+          <button id="startButton" class="primary-button">Play Now</button>
+          <p class="tiny-note">Press P anytime to pause.</p>
+        </div>
+      </div>
+
+      <div class="overlay" id="pauseOverlay">
+        <div class="overlay-card small-card">
+          <p class="overlay-kicker">Paused</p>
+          <h2>Catch your breath.</h2>
+          <button id="resumeButton" class="primary-button">Resume</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="gameOverOverlay">
+        <div class="overlay-card small-card">
+          <p class="overlay-kicker">Run over</p>
+          <h2 id="gameOverTitle">You fell.</h2>
+          <p class="result-line">Final score <strong id="finalScore">0</strong></p>
+          <p class="result-line">Best score <strong id="finalBest">0</strong></p>
+          <button id="restartButton" class="primary-button">Sprint again</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-bar">
+      <div class="pill">One-button runner</div>
+      <div class="pill">Mobile-friendly</div>
+      <div class="pill accent">Combo rush</div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
