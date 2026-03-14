@@ -12,9 +12,13 @@
       <div class="brand-block">
         <p class="eyebrow">Night Game #2</p>
         <h1>Stack Sprint</h1>
-        <p class="tagline">Tap to jump. Hold the combo. Don’t trust the floor.</p>
+        <p class="tagline">Dash, dodge, collect, and survive the neon lane. Fun starts immediately now.</p>
       </div>
       <div class="stat-row">
+        <div class="stat-card">
+          <span class="label">Player</span>
+          <strong id="playerValue">Guest</strong>
+        </div>
         <div class="stat-card">
           <span class="label">Score</span>
           <strong id="scoreValue">0</strong>
@@ -24,7 +28,7 @@
           <strong id="bestValue">0</strong>
         </div>
         <div class="stat-card combo-card">
-          <span class="label">Combo</span>
+          <span class="label">Rush</span>
           <strong id="comboValue">x1</strong>
         </div>
       </div>
@@ -33,17 +37,55 @@
     <section class="game-panel">
       <canvas id="gameCanvas" width="1280" height="720" aria-label="Stack Sprint game canvas"></canvas>
 
+      <div class="top-actions">
+        <button id="homeButton" class="ghost-button">Quit / Home</button>
+        <button id="restartTopButton" class="ghost-button accent">Restart</button>
+      </div>
+
+      <div class="event-banner" id="eventBanner">Thread the gaps. Grab sparks. Don’t hit crates.</div>
+
       <div class="overlay visible" id="startOverlay">
         <div class="overlay-card hero-card">
           <p class="overlay-kicker">Arcade runner</p>
-          <h2>Land clean. Grab coins. Keep moving.</h2>
-          <ul>
-            <li><span>Jump</span> Space / click / tap</li>
-            <li><span>Goal</span> Chain clean landings for combo</li>
-            <li><span>Warning</span> Platforms crumble after you touch them</li>
-          </ul>
-          <button id="startButton" class="primary-button">Play Now</button>
-          <p class="tiny-note">Press P anytime to pause.</p>
+          <h2>Enter your name. Hit the lane. Chase the leaderboard.</h2>
+
+          <label class="field-block" for="playerNameInput">
+            <span>Player name</span>
+            <input id="playerNameInput" type="text" maxlength="18" placeholder="Ahmed" autocomplete="nickname" />
+          </label>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <span>Jump</span>
+              Space / click / tap
+            </div>
+            <div class="feature-card">
+              <span>Dodge</span>
+              Crates and barriers arrive in seconds
+            </div>
+            <div class="feature-card">
+              <span>Reward loop</span>
+              Sparks boost streak and score multipliers
+            </div>
+            <div class="feature-card">
+              <span>Goal</span>
+              Last long enough to post a named run
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="startButton" class="primary-button">Start Run</button>
+          </div>
+
+          <div class="leaderboard-card">
+            <div class="leaderboard-head">
+              <p class="overlay-kicker">Local leaderboard</p>
+              <span id="leaderboardHint">Top 5 runs on this device</span>
+            </div>
+            <ol id="leaderboardList" class="leaderboard-list"></ol>
+          </div>
+
+          <p class="tiny-note">Press P or Esc anytime to pause. Named scores save on this browser.</p>
         </div>
       </div>
 
@@ -51,25 +93,34 @@
         <div class="overlay-card small-card">
           <p class="overlay-kicker">Paused</p>
           <h2>Catch your breath.</h2>
-          <button id="resumeButton" class="primary-button">Resume</button>
+          <p class="result-line">Your lane is waiting.</p>
+          <div class="button-stack">
+            <button id="resumeButton" class="primary-button">Resume</button>
+            <button id="pauseRestartButton" class="secondary-button">Restart</button>
+            <button id="pauseHomeButton" class="ghost-button wide">Quit to Home</button>
+          </div>
         </div>
       </div>
 
       <div class="overlay" id="gameOverOverlay">
         <div class="overlay-card small-card">
           <p class="overlay-kicker">Run over</p>
-          <h2 id="gameOverTitle">You fell.</h2>
-          <p class="result-line">Final score <strong id="finalScore">0</strong></p>
-          <p class="result-line">Best score <strong id="finalBest">0</strong></p>
-          <button id="restartButton" class="primary-button">Sprint again</button>
+          <h2 id="gameOverTitle">You clipped a crate.</h2>
+          <p class="result-line"><span id="finalPlayer">Guest</span>, final score <strong id="finalScore">0</strong></p>
+          <p class="result-line">Session best <strong id="finalBest">0</strong></p>
+          <p class="result-line" id="rankLine">Leaderboard update pending</p>
+          <div class="button-stack">
+            <button id="restartButton" class="primary-button">Sprint Again</button>
+            <button id="gameOverHomeButton" class="ghost-button wide">Quit to Home</button>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="footer-bar">
-      <div class="pill">One-button runner</div>
-      <div class="pill">Mobile-friendly</div>
-      <div class="pill accent">Combo rush</div>
+      <div class="pill">Named leaderboard</div>
+      <div class="pill">Immediate obstacles</div>
+      <div class="pill accent">Responsive arcade sprint</div>
     </section>
   </main>
 

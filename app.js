@@ -1,12 +1,18 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+const playerValue = document.getElementById('playerValue');
 const scoreValue = document.getElementById('scoreValue');
 const bestValue = document.getElementById('bestValue');
 const comboValue = document.getElementById('comboValue');
+const finalPlayer = document.getElementById('finalPlayer');
 const finalScore = document.getElementById('finalScore');
 const finalBest = document.getElementById('finalBest');
 const gameOverTitle = document.getElementById('gameOverTitle');
+const rankLine = document.getElementById('rankLine');
+const eventBanner = document.getElementById('eventBanner');
+const leaderboardList = document.getElementById('leaderboardList');
+const playerNameInput = document.getElementById('playerNameInput');
 
 const startOverlay = document.getElementById('startOverlay');
 const pauseOverlay = document.getElementById('pauseOverlay');
@@ -14,24 +20,34 @@ const gameOverOverlay = document.getElementById('gameOverOverlay');
 const startButton = document.getElementById('startButton');
 const resumeButton = document.getElementById('resumeButton');
 const restartButton = document.getElementById('restartButton');
+const restartTopButton = document.getElementById('restartTopButton');
+const pauseRestartButton = document.getElementById('pauseRestartButton');
+const homeButton = document.getElementById('homeButton');
+const pauseHomeButton = document.getElementById('pauseHomeButton');
+const gameOverHomeButton = document.getElementById('gameOverHomeButton');
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 const GROUND_Y = 590;
-const PLAYER_X = 270;
-const GRAVITY = 2400;
-const BASE_SCROLL = 345;
+const PLAYER_X = 220;
+const GRAVITY = 2550;
+const JUMP_FORCE = 925;
+const BASE_SCROLL = 420;
 const MAX_DT = 1 / 30;
-const STORAGE_KEY = 'stack-sprint-best';
+const STORAGE_KEY = 'stack-sprint-leaderboard';
+const PLAYER_KEY = 'stack-sprint-player-name';
+const LEADERBOARD_LIMIT = 5;
 
 const palette = {
-  bgTop: '#0c1734',
-  bgBottom: '#050812',
+  bgTop: '#091329',
+  bgBottom: '#04070f',
   cyan: '#72f6ff',
   violet: '#8a7dff',
   violetSoft: '#b7afff',
   gold: '#ffd968',
   coral: '#ff7a93',
+  danger: '#ff627e',
+  lime: '#7dffb0',
   white: '#f5f8ff',
   slate: '#7d8cb5',
   glow: 'rgba(114,246,255,0.35)',
@@ -40,13 +56,16 @@ const palette = {
 const state = {
   mode: 'start',
   score: 0,
-  best: Number(localStorage.getItem(STORAGE_KEY) || 0),
-  combo: 0,
+  best: 0,
+  streak: 0,
   speed: BASE_SCROLL,
-  distance: 0,
   time: 0,
-  platforms: [],
-  coins: [],
+  distance: 0,
+  playerName: '',
+  leaderboard: loadLeaderboard(),
+  lanes: [GROUND_Y - 72, GROUND_Y - 186],
+  obstacles: [],
+  pickups: [],
   particles: [],
   popups: [],
   skyline: makeSkyline(),
@@ -57,30 +76,108 @@ const state = {
   audioCtx: null,
   musicClock: 0,
   musicStep: 0,
-  nextSpawnX: 0,
+  nextObstacleAt: 0,
+  nextPickupAt: 0,
+  lastObstacleType: 'crate',
+  bannerText: 'Thread the gaps. Grab sparks. Don’t hit crates.',
+  bannerTimer: 0,
+  justSavedRank: null,
 };
+
+state.best = state.leaderboard[0]?.score || 0;
+state.playerName = loadPlayerName();
+playerNameInput.value = state.playerName;
 
 function createPlayer() {
   return {
     x: PLAYER_X,
     y: GROUND_Y - 72,
-    w: 54,
+    w: 58,
     h: 72,
     vy: 0,
     jumps: 0,
     maxJumps: 2,
     coyote: 0,
-    onPlatform: null,
     onGround: true,
     jumpBuffer: 0,
     trailClock: 0,
     squash: 0,
     alive: true,
+    fever: 0,
+    flash: 0,
   };
 }
 
+function loadPlayerName() {
+  return (localStorage.getItem(PLAYER_KEY) || '').trim();
+}
+
+function savePlayerName(name) {
+  localStorage.setItem(PLAYER_KEY, name);
+}
+
+function loadLeaderboard() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((entry) => entry && typeof entry.name === 'string' && Number.isFinite(entry.score))
+      .map((entry) => ({ name: entry.name.slice(0, 18), score: Math.floor(entry.score) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, LEADERBOARD_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function saveLeaderboard() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.leaderboard));
+}
+
+function updateLeaderboard(score) {
+  const entry = { name: state.playerName, score: Math.floor(score) };
+  state.leaderboard.push(entry);
+  state.leaderboard = state.leaderboard
+    .sort((a, b) => b.score - a.score)
+    .slice(0, LEADERBOARD_LIMIT);
+  saveLeaderboard();
+  state.best = state.leaderboard[0]?.score || 0;
+  const rank = state.leaderboard.findIndex((item) => item.name === entry.name && item.score === entry.score);
+  return rank >= 0 ? rank + 1 : null;
+}
+
+function renderLeaderboard() {
+  leaderboardList.innerHTML = '';
+  if (!state.leaderboard.length) {
+    const empty = document.createElement('li');
+    empty.innerHTML = '<span class="rank">—</span><span class="name">No runs yet. Start the lane.</span><span class="score">0</span>';
+    leaderboardList.appendChild(empty);
+    return;
+  }
+
+  state.leaderboard.forEach((entry, index) => {
+    const item = document.createElement('li');
+    item.innerHTML = `
+      <span class="rank">#${index + 1}</span>
+      <span class="name">${escapeHtml(entry.name)}</span>
+      <span class="score">${entry.score}</span>
+    `;
+    leaderboardList.appendChild(item);
+  });
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
 function makeStars() {
-  return Array.from({ length: 40 }, () => ({
+  return Array.from({ length: 42 }, () => ({
     x: Math.random() * WIDTH,
     y: Math.random() * 280,
     r: Math.random() * 2 + 0.5,
@@ -100,91 +197,72 @@ function makeSkyline() {
 
 function resetRun() {
   state.score = 0;
-  state.combo = 0;
+  state.streak = 0;
   state.speed = BASE_SCROLL;
-  state.distance = 0;
   state.time = 0;
+  state.distance = 0;
   state.musicClock = 0;
   state.musicStep = 0;
-  state.platforms = [];
-  state.coins = [];
+  state.obstacles = [];
+  state.pickups = [];
   state.particles = [];
   state.popups = [];
-  state.nextSpawnX = 420;
+  state.justSavedRank = null;
   state.player = createPlayer();
-  seedPlatforms();
+  state.nextObstacleAt = 0.8;
+  state.nextPickupAt = 0.45;
+  setBanner('Jump early. First crate incoming.', 2.8);
   syncHud();
 }
 
-function seedPlatforms() {
-  state.platforms.push(makePlatform(0, GROUND_Y, 460, false));
-  state.platforms.push(makePlatform(470, 520, 165, true));
-  state.platforms.push(makePlatform(720, 470, 150, true));
-  state.platforms.push(makePlatform(955, 560, 180, true));
-  state.platforms.push(makePlatform(1200, 500, 170, true));
-  state.nextSpawnX = 1450;
-  state.platforms.forEach((platform, index) => {
-    if (index > 0 && Math.random() > 0.28) spawnCoinAbove(platform);
-  });
-}
-
-function makePlatform(x, y, width, collapsing = true) {
-  return {
-    x,
-    y,
-    width,
-    height: 22,
-    collapsing,
-    touched: false,
-    collapseTimer: 0,
-    fallSpeed: 0,
-    shake: 0,
-    scored: false,
-  };
-}
-
-function spawnPlatform() {
-  const minGap = 140;
-  const maxGap = 250 + Math.min(state.time * 1.8, 120);
-  const gap = minGap + Math.random() * (maxGap - minGap);
-  const width = 110 + Math.random() * 95 - Math.min(state.time * 0.3, 20);
-  const y = 430 + Math.random() * 150;
-  const platform = makePlatform(state.nextSpawnX + gap, y, Math.max(92, width), true);
-  state.platforms.push(platform);
-  state.nextSpawnX = platform.x + platform.width;
-  if (Math.random() < 0.85) spawnCoinAbove(platform);
-}
-
-function spawnCoinAbove(platform) {
-  const count = Math.random() < 0.35 ? 2 : 1;
-  for (let i = 0; i < count; i += 1) {
-    state.coins.push({
-      x: platform.x + platform.width * (count === 1 ? 0.5 : 0.33 + i * 0.34),
-      y: platform.y - 42 - i * 16,
-      r: 10,
-      bob: Math.random() * Math.PI * 2,
-      taken: false,
-    });
+function ensurePlayerName() {
+  const name = (playerNameInput.value || '').trim().slice(0, 18);
+  if (!name) {
+    playerNameInput.focus();
+    setBanner('Enter your name first so your run can hit the leaderboard.', 2.6);
+    return false;
   }
+  state.playerName = name;
+  savePlayerName(name);
+  return true;
 }
 
 function syncHud() {
+  playerValue.textContent = state.playerName || 'Guest';
   scoreValue.textContent = Math.floor(state.score);
   bestValue.textContent = Math.floor(state.best);
-  comboValue.textContent = `×${Math.max(1, state.combo + 1)}`;
+  comboValue.textContent = `×${Math.max(1, state.streak + 1)}`;
+  eventBanner.textContent = state.bannerText;
 }
 
 function setOverlay(overlay, visible) {
   overlay.classList.toggle('visible', visible);
 }
 
+function setBanner(text, duration = 2.4) {
+  state.bannerText = text;
+  state.bannerTimer = duration;
+  eventBanner.textContent = text;
+}
+
 function startGame() {
+  if (!ensurePlayerName()) return;
   unlockAudio();
   resetRun();
   state.mode = 'playing';
   setOverlay(startOverlay, false);
   setOverlay(gameOverOverlay, false);
   setOverlay(pauseOverlay, false);
+}
+
+function goHome() {
+  state.mode = 'start';
+  setOverlay(startOverlay, true);
+  setOverlay(gameOverOverlay, false);
+  setOverlay(pauseOverlay, false);
+  setBanner('Ready for another run? Enter a name and start.', 2.8);
+  syncHud();
+  renderLeaderboard();
 }
 
 function pauseGame() {
@@ -199,15 +277,17 @@ function resumeGame() {
   setOverlay(pauseOverlay, false);
 }
 
-function endGame(reason = 'You fell.') {
+function endGame(reason = 'You clipped a crate.') {
   state.mode = 'gameover';
   state.player.alive = false;
-  state.best = Math.max(state.best, Math.floor(state.score));
-  localStorage.setItem(STORAGE_KEY, String(state.best));
+  state.justSavedRank = updateLeaderboard(state.score);
   syncHud();
+  renderLeaderboard();
+  finalPlayer.textContent = state.playerName;
   finalScore.textContent = Math.floor(state.score);
   finalBest.textContent = Math.floor(state.best);
   gameOverTitle.textContent = reason;
+  rankLine.textContent = state.justSavedRank ? `Leaderboard rank: #${state.justSavedRank}` : 'Score saved to leaderboard';
   setOverlay(gameOverOverlay, true);
   playSfx('lose');
 }
@@ -219,12 +299,7 @@ function togglePause() {
 
 function requestJump() {
   unlockAudio();
-  if (state.mode === 'start') {
-    startGame();
-  }
-  if (state.mode === 'gameover') {
-    startGame();
-  }
+  if (state.mode === 'start' || state.mode === 'gameover') return;
   if (state.mode !== 'playing') return;
   state.player.jumpBuffer = 0.12;
 }
@@ -233,13 +308,12 @@ function performJump() {
   const player = state.player;
   const canUseGround = player.onGround || player.coyote > 0;
   if (canUseGround) {
-    player.vy = -900;
+    player.vy = -JUMP_FORCE;
     player.onGround = false;
-    player.onPlatform = null;
     player.coyote = 0;
     player.jumps = 1;
   } else if (player.jumps < player.maxJumps) {
-    player.vy = -820;
+    player.vy = -JUMP_FORCE * 0.9;
     player.jumps += 1;
   } else {
     return false;
@@ -251,26 +325,72 @@ function performJump() {
   return true;
 }
 
+function spawnObstacle() {
+  const now = state.time;
+  const lane = Math.random() < 0.38 ? 1 : 0;
+  const y = state.lanes[lane];
+  const chooseBarrier = now > 5 && Math.random() < 0.28;
+  const type = chooseBarrier ? 'barrier' : 'crate';
+  const obstacle = {
+    type,
+    lane,
+    x: WIDTH + 120,
+    y,
+    w: type === 'barrier' ? 84 : 64,
+    h: type === 'barrier' ? 108 : 72,
+    pulse: Math.random() * Math.PI * 2,
+    scored: false,
+  };
+  state.lastObstacleType = type;
+  state.obstacles.push(obstacle);
+  const interval = Math.max(0.8, 1.55 - Math.min(now * 0.045, 0.5));
+  state.nextObstacleAt = now + interval;
+}
+
+function spawnPickup() {
+  const now = state.time;
+  const lane = Math.random() < 0.45 ? 1 : 0;
+  const pickup = {
+    x: WIDTH + 150,
+    y: state.lanes[lane] + 16,
+    r: 15,
+    lane,
+    bob: Math.random() * Math.PI * 2,
+    taken: false,
+  };
+  state.pickups.push(pickup);
+  const interval = Math.max(0.95, 1.35 - Math.min(now * 0.03, 0.25));
+  state.nextPickupAt = now + interval;
+}
+
 function update(dt) {
   state.time += dt;
-  if (state.mode !== 'playing') return;
-
-  state.speed = BASE_SCROLL + Math.min(210, state.time * 8.5);
-  state.distance += state.speed * dt;
-  state.score += dt * (10 + state.combo * 2.2);
-
-  updateBackground(dt);
-  updatePlatforms(dt);
-  updateCoins(dt);
-  updatePlayer(dt);
-  updateParticles(dt);
-  updatePopups(dt);
-  updateMusic(dt);
-
-  while (state.nextSpawnX < WIDTH + 420) {
-    spawnPlatform();
+  if (state.bannerTimer > 0) {
+    state.bannerTimer = Math.max(0, state.bannerTimer - dt);
+    if (state.bannerTimer === 0 && state.mode === 'playing') {
+      setBanner('Stay alive, chain sparks, and clear crates for bigger points.', 999);
+    }
   }
 
+  updateBackground(dt);
+  updateParticles(dt);
+  updatePopups(dt);
+
+  if (state.mode !== 'playing') return;
+
+  state.speed = BASE_SCROLL + Math.min(260, state.time * 16) + Math.min(120, state.streak * 12);
+  state.distance += state.speed * dt;
+
+  const feverBoost = state.player.fever > 0 ? 2.4 : 1;
+  state.score += dt * (18 + state.streak * 6) * feverBoost;
+
+  if (state.time >= state.nextObstacleAt) spawnObstacle();
+  if (state.time >= state.nextPickupAt) spawnPickup();
+
+  updateObstacles(dt);
+  updatePickups(dt);
+  updatePlayer(dt);
+  updateMusic(dt);
   syncHud();
 }
 
@@ -281,119 +401,101 @@ function updateBackground(dt) {
   });
 }
 
-function updatePlatforms(dt) {
-  for (const platform of state.platforms) {
-    platform.x -= state.speed * dt;
-    if (platform.touched && platform.collapsing) {
-      platform.collapseTimer += dt;
-      platform.shake = Math.sin(platform.collapseTimer * 50) * 3;
-      if (platform.collapseTimer > 0.34) {
-        platform.fallSpeed += 2200 * dt;
-        platform.y += platform.fallSpeed * dt;
+function updateObstacles(dt) {
+  const player = state.player;
+  for (const obstacle of state.obstacles) {
+    obstacle.x -= state.speed * dt;
+
+    if (!obstacle.scored && obstacle.x + obstacle.w < player.x - 14) {
+      obstacle.scored = true;
+      state.streak += 1;
+      const gain = 10 + state.streak * 5;
+      state.score += gain;
+      addPopup(obstacle.x + obstacle.w / 2, obstacle.y - 14, `clear +${gain}`, palette.lime);
+      emitBurst(obstacle.x + obstacle.w / 2, obstacle.y + obstacle.h * 0.4, palette.lime, 7, 120);
+      if (state.streak === 1) setBanner('Nice. Clears increase your streak multiplier.', 2.1);
+      if (state.streak === 4) {
+        state.player.fever = 3.2;
+        setBanner('FEVER! Your score gain is juiced for a few seconds.', 2.4);
+        playSfx('fever');
+      } else {
+        playSfx('clear');
       }
     }
-  }
-  state.platforms = state.platforms.filter((platform) => platform.x + platform.width > -240 && platform.y < HEIGHT + 260);
-}
 
-function updateCoins(dt) {
-  const player = state.player;
-  for (const coin of state.coins) {
-    coin.x -= state.speed * dt;
-    coin.bob += dt * 5;
-    if (coin.taken) continue;
-    const cx = coin.x;
-    const cy = coin.y + Math.sin(coin.bob) * 6;
-    const nearestX = Math.max(player.x, Math.min(cx, player.x + player.w));
-    const nearestY = Math.max(player.y, Math.min(cy, player.y + player.h));
-    const dx = cx - nearestX;
-    const dy = cy - nearestY;
-    if (dx * dx + dy * dy < coin.r * coin.r) {
-      coin.taken = true;
-      state.combo += 1;
-      const gain = 15 + state.combo * 3;
-      state.score += gain;
-      emitBurst(cx, cy, palette.gold, 12, 220);
-      addPopup(cx, cy - 10, `+${Math.floor(gain)}`, palette.gold);
-      playSfx('coin');
+    if (rectsOverlap(player.x + 6, player.y + 4, player.w - 12, player.h - 8, obstacle.x, obstacle.y, obstacle.w, obstacle.h)) {
+      endGame(obstacle.type === 'barrier' ? 'Barrier slammed the run.' : 'You clipped a crate.');
+      return;
     }
   }
-  state.coins = state.coins.filter((coin) => coin.x > -60 && !coin.taken);
+  state.obstacles = state.obstacles.filter((obstacle) => obstacle.x + obstacle.w > -120);
+}
+
+function updatePickups(dt) {
+  const player = state.player;
+  for (const pickup of state.pickups) {
+    pickup.x -= state.speed * dt;
+    pickup.bob += dt * 6;
+    const px = pickup.x;
+    const py = pickup.y + Math.sin(pickup.bob) * 10;
+    const nearestX = Math.max(player.x, Math.min(px, player.x + player.w));
+    const nearestY = Math.max(player.y, Math.min(py, player.y + player.h));
+    const dx = px - nearestX;
+    const dy = py - nearestY;
+    if (!pickup.taken && dx * dx + dy * dy < pickup.r * pickup.r) {
+      pickup.taken = true;
+      state.streak += 1;
+      const gain = 20 + state.streak * 6;
+      state.score += gain;
+      state.player.flash = 0.18;
+      if (state.streak >= 3) state.player.fever = Math.max(state.player.fever, 2.2);
+      emitBurst(px, py, palette.gold, 12, 220);
+      addPopup(px, py - 10, `spark +${gain}`, palette.gold);
+      playSfx('coin');
+      if (state.streak === 2) setBanner('Sparks raise the multiplier. Stack them with obstacle clears.', 2.2);
+    }
+  }
+  state.pickups = state.pickups.filter((pickup) => pickup.x > -60 && !pickup.taken);
 }
 
 function updatePlayer(dt) {
   const player = state.player;
-  const prevY = player.y;
-  const prevBottom = prevY + player.h;
+  const prevBottom = player.y + player.h;
 
   player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
   player.coyote = Math.max(0, player.coyote - dt);
   player.trailClock += dt;
   player.squash = Math.max(0, player.squash - dt * 1.8);
+  player.fever = Math.max(0, player.fever - dt);
+  player.flash = Math.max(0, player.flash - dt);
 
-  if (player.jumpBuffer > 0) {
-    performJump();
-  }
+  if (player.jumpBuffer > 0) performJump();
 
   player.vy += GRAVITY * dt;
   player.y += player.vy * dt;
 
-  let landed = false;
-  let support = null;
-
-  if (player.vy >= 0) {
-    for (const platform of state.platforms) {
-      const top = platform.y;
-      const left = platform.x;
-      const right = platform.x + platform.width;
-      const playerLeft = player.x + 10;
-      const playerRight = player.x + player.w - 10;
-      const nowBottom = player.y + player.h;
-      if (prevBottom <= top && nowBottom >= top && playerRight > left && playerLeft < right) {
-        landed = true;
-        support = platform;
-        player.y = top - player.h;
-        player.vy = 0;
-        player.jumps = 0;
-        player.onGround = false;
-        player.coyote = 0.1;
-        break;
-      }
-    }
-  }
-
-  if (landed) {
-    handleLanding(support);
-    player.onPlatform = support;
-  } else {
-    if (player.onPlatform && !isStillSupported(player, player.onPlatform)) {
-      player.onPlatform = null;
-      player.coyote = 0.1;
-    }
-
-    if (!player.onPlatform) {
-      player.onGround = false;
-    }
-  }
-
   if (player.y + player.h >= GROUND_Y) {
     player.y = GROUND_Y - player.h;
-    if (!player.onGround && prevBottom < GROUND_Y + 2) {
-      state.combo = 0;
-      emitBurst(player.x + player.w / 2, GROUND_Y - 2, palette.coral, 10, 160);
-      addPopup(player.x + player.w / 2, GROUND_Y - 30, 'combo broke', palette.coral);
+    if (!player.onGround && prevBottom < GROUND_Y + 2 && player.vy > 220) {
+      if (state.streak > 0) {
+        state.streak = Math.max(0, state.streak - 1);
+        addPopup(player.x + player.w / 2, GROUND_Y - 30, 'rough landing - streak', palette.coral);
+      }
+      emitBurst(player.x + player.w / 2, GROUND_Y - 2, palette.coral, 8, 140);
     }
     player.onGround = true;
-    player.onPlatform = null;
     player.vy = 0;
     player.jumps = 0;
+  } else {
+    if (player.onGround && prevBottom >= GROUND_Y - 1) player.coyote = 0.1;
+    player.onGround = false;
   }
 
   if (player.y > HEIGHT + 180) {
-    endGame('Missed the stack.');
+    endGame('Missed the lane.');
   }
 
-  if (player.trailClock > 0.04 && (player.onPlatform || !player.onGround)) {
+  if (player.trailClock > 0.04 && (!player.onGround || player.fever > 0)) {
     player.trailClock = 0;
     state.particles.push({
       x: player.x + 18,
@@ -402,36 +504,14 @@ function updatePlayer(dt) {
       vy: -20 - Math.random() * 20,
       life: 0.36,
       maxLife: 0.36,
-      color: palette.violetSoft,
+      color: player.fever > 0 ? palette.gold : palette.violetSoft,
       size: 4 + Math.random() * 4,
     });
   }
 }
 
-function isStillSupported(player, platform) {
-  const playerLeft = player.x + 12;
-  const playerRight = player.x + player.w - 12;
-  return player.y + player.h === platform.y && playerRight > platform.x && playerLeft < platform.x + platform.width;
-}
-
-function handleLanding(platform) {
-  const player = state.player;
-  player.squash = 0.18;
-  emitBurst(player.x + player.w / 2, player.y + player.h, palette.cyan, 10, 180);
-
-  if (!platform.scored) {
-    platform.scored = true;
-    state.combo += 1;
-    const gain = 12 + state.combo * 4;
-    state.score += gain;
-    addPopup(player.x + player.w / 2, player.y - 8, `clean x${state.combo + 1}`, palette.cyan);
-    playSfx('land');
-  }
-
-  if (platform.collapsing && !platform.touched) {
-    platform.touched = true;
-    platform.collapseTimer = 0;
-  }
+function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 }
 
 function updateParticles(dt) {
@@ -453,7 +533,7 @@ function updatePopups(dt) {
 }
 
 function addPopup(x, y, text, color) {
-  state.popups.push({ x, y, text, color, life: 0.85 });
+  state.popups.push({ x, y, text, color, life: 0.9 });
 }
 
 function emitBurst(x, y, color, count, power) {
@@ -476,8 +556,9 @@ function emitBurst(x, y, color, count, power) {
 function render() {
   drawBackground();
   drawGround();
-  drawPlatforms();
-  drawCoins();
+  drawLaneHints();
+  drawPickups();
+  drawObstacles();
   drawPlayer();
   drawParticles();
   drawPopups();
@@ -546,37 +627,83 @@ function drawGround() {
   ctx.restore();
 }
 
-function drawPlatforms() {
-  state.platforms.forEach((platform) => {
-    const glow = platform.touched ? palette.coral : palette.cyan;
+function drawLaneHints() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(114,246,255,0.08)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([18, 16]);
+  state.lanes.forEach((laneY, index) => {
+    const y = laneY + 72;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(WIDTH, y);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.font = '700 16px Inter';
+    ctx.fillText(index === 0 ? 'run lane' : 'jump lane', 24, y - 12);
+  });
+  ctx.restore();
+}
+
+function drawObstacles() {
+  state.obstacles.forEach((obstacle) => {
     ctx.save();
-    ctx.translate(platform.shake, 0);
-    ctx.shadowColor = glow;
-    ctx.shadowBlur = platform.touched ? 14 : 24;
-    const body = ctx.createLinearGradient(platform.x, platform.y, platform.x, platform.y + platform.height);
-    body.addColorStop(0, platform.touched ? '#ff8da1' : '#9af8ff');
-    body.addColorStop(1, platform.touched ? '#ff5f7f' : '#46d6f2');
-    roundRect(platform.x, platform.y, platform.width, platform.height, 12, body);
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
-    ctx.fillRect(platform.x + 10, platform.y + 5, platform.width - 20, 3);
+    ctx.translate(obstacle.x, obstacle.y);
+    if (obstacle.type === 'barrier') {
+      ctx.shadowColor = 'rgba(255,98,126,0.45)';
+      ctx.shadowBlur = 20;
+      const body = ctx.createLinearGradient(0, 0, 0, obstacle.h);
+      body.addColorStop(0, '#ff9aaa');
+      body.addColorStop(1, '#ff5b79');
+      roundRect(0, 0, obstacle.w, obstacle.h, 18, body);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(12, 22, obstacle.w - 24, 10);
+      ctx.fillRect(12, 52, obstacle.w - 24, 10);
+    } else {
+      ctx.shadowColor = 'rgba(114,246,255,0.35)';
+      ctx.shadowBlur = 16;
+      const body = ctx.createLinearGradient(0, 0, 0, obstacle.h);
+      body.addColorStop(0, '#9af8ff');
+      body.addColorStop(1, '#3cc8df');
+      roundRect(0, 0, obstacle.w, obstacle.h, 14, body);
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(8, 8, obstacle.w - 16, obstacle.h - 16);
+      ctx.beginPath();
+      ctx.moveTo(8, 8);
+      ctx.lineTo(obstacle.w - 8, obstacle.h - 8);
+      ctx.moveTo(obstacle.w - 8, 8);
+      ctx.lineTo(8, obstacle.h - 8);
+      ctx.stroke();
+    }
     ctx.restore();
   });
 }
 
-function drawCoins() {
-  state.coins.forEach((coin) => {
-    const y = coin.y + Math.sin(coin.bob) * 6;
+function drawPickups() {
+  state.pickups.forEach((pickup) => {
+    const y = pickup.y + Math.sin(pickup.bob) * 10;
     ctx.save();
-    ctx.translate(coin.x, y);
-    ctx.rotate(state.time * 6 + coin.bob);
+    ctx.translate(pickup.x, y);
+    ctx.rotate(state.time * 6 + pickup.bob);
     ctx.shadowColor = 'rgba(255,217,104,0.5)';
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 20;
     ctx.fillStyle = palette.gold;
     ctx.beginPath();
-    ctx.arc(0, 0, coin.r, 0, Math.PI * 2);
+    ctx.arc(0, 0, pickup.r, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillRect(-2, -6, 4, 12);
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.beginPath();
+    ctx.moveTo(0, -11);
+    ctx.lineTo(4, -4);
+    ctx.lineTo(11, 0);
+    ctx.lineTo(4, 4);
+    ctx.lineTo(0, 11);
+    ctx.lineTo(-4, 4);
+    ctx.lineTo(-11, 0);
+    ctx.lineTo(-4, -4);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
   });
 }
@@ -590,24 +717,24 @@ function drawPlayer() {
   ctx.scale(squash, stretch);
   ctx.translate(-(p.x + p.w / 2), -(p.y + p.h / 2));
 
-  ctx.shadowColor = palette.violet;
-  ctx.shadowBlur = 22;
+  ctx.shadowColor = p.fever > 0 ? palette.gold : palette.violet;
+  ctx.shadowBlur = p.fever > 0 ? 32 : 22;
   const body = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
-  body.addColorStop(0, '#b7afff');
-  body.addColorStop(1, '#6f61ff');
+  body.addColorStop(0, p.flash > 0 ? '#fff3bf' : '#b7afff');
+  body.addColorStop(1, p.fever > 0 ? '#ffb347' : '#6f61ff');
   roundRect(p.x, p.y + 10, p.w, p.h - 10, 18, body);
 
   ctx.fillStyle = palette.white;
   ctx.fillRect(p.x + 13, p.y + 18, 11, 12);
-  ctx.fillRect(p.x + 30, p.y + 18, 11, 12);
+  ctx.fillRect(p.x + 34, p.y + 18, 11, 12);
   ctx.fillStyle = '#11152a';
   ctx.fillRect(p.x + 16, p.y + 21, 5, 7);
-  ctx.fillRect(p.x + 33, p.y + 21, 5, 7);
+  ctx.fillRect(p.x + 37, p.y + 21, 5, 7);
   ctx.fillStyle = 'rgba(255,255,255,0.2)';
   ctx.fillRect(p.x + 10, p.y + 14, p.w - 20, 5);
   ctx.restore();
 
-  ctx.fillStyle = 'rgba(114,246,255,0.25)';
+  ctx.fillStyle = p.fever > 0 ? 'rgba(255,217,104,0.32)' : 'rgba(114,246,255,0.25)';
   ctx.beginPath();
   ctx.ellipse(p.x + p.w / 2, GROUND_Y + 18, 40, 10, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -630,7 +757,7 @@ function drawPopups() {
   ctx.font = '700 24px Inter';
   ctx.textAlign = 'center';
   state.popups.forEach((popup) => {
-    ctx.globalAlpha = Math.min(1, popup.life / 0.85);
+    ctx.globalAlpha = Math.min(1, popup.life / 0.9);
     ctx.fillStyle = popup.color;
     ctx.fillText(popup.text, popup.x, popup.y);
   });
@@ -639,18 +766,18 @@ function drawPopups() {
 
 function drawWorldHud() {
   if (state.mode !== 'playing') return;
-  ctx.save();
-  ctx.fillStyle = 'rgba(7,11,22,0.55)';
-  roundRect(28, 24, 250, 82, 20, 'rgba(7,11,22,0.55)');
+  roundRect(28, 24, 300, 100, 20, 'rgba(7,11,22,0.55)');
   ctx.fillStyle = palette.white;
   ctx.font = '700 18px Inter';
   ctx.fillText('Speed', 52, 54);
-  ctx.fillText('Rush', 52, 86);
+  ctx.fillText('Streak', 52, 86);
+  ctx.fillText(state.player.fever > 0 ? 'Fever on' : 'Fever off', 52, 116);
   ctx.fillStyle = palette.cyan;
-  ctx.fillRect(118, 42, Math.min(130, (state.speed - BASE_SCROLL) * 0.6 + 22), 10);
-  ctx.fillStyle = state.combo > 2 ? palette.gold : palette.violetSoft;
-  ctx.fillRect(118, 74, Math.min(130, state.combo * 16 + 18), 10);
-  ctx.restore();
+  ctx.fillRect(132, 42, Math.min(150, (state.speed - BASE_SCROLL) * 0.45 + 28), 10);
+  ctx.fillStyle = state.streak > 2 ? palette.gold : palette.violetSoft;
+  ctx.fillRect(132, 74, Math.min(150, state.streak * 20 + 18), 10);
+  ctx.fillStyle = state.player.fever > 0 ? palette.gold : 'rgba(255,255,255,0.12)';
+  ctx.fillRect(132, 106, Math.min(150, state.player.fever * 42), 10);
 }
 
 function roundRect(x, y, w, h, r, fillStyle) {
@@ -682,9 +809,10 @@ function playSfx(type) {
 
   const tones = {
     jump: [440, 660, 0.09, 'triangle'],
-    land: [220, 330, 0.08, 'square'],
     coin: [880, 1320, 0.12, 'triangle'],
     lose: [220, 140, 0.35, 'sawtooth'],
+    clear: [330, 440, 0.08, 'square'],
+    fever: [660, 990, 0.14, 'triangle'],
   };
 
   const [from, to, duration, wave] = tones[type] || tones.jump;
@@ -692,7 +820,7 @@ function playSfx(type) {
   const gain = audio.createGain();
   const filter = audio.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 1600;
+  filter.frequency.value = 1700;
 
   osc.type = wave;
   osc.frequency.setValueAtTime(from, now);
@@ -713,15 +841,19 @@ function updateMusic(dt) {
   const audio = state.audioCtx;
   if (!audio || state.mode !== 'playing') return;
   state.musicClock += dt;
-  const stepLength = 0.22;
+  const stepLength = state.player.fever > 0 ? 0.16 : 0.22;
   if (state.musicClock < stepLength) return;
   state.musicClock -= stepLength;
-  const pattern = [262, 330, 392, 523, 392, 330, 294, 330];
-  const bass = [131, 131, 147, 147, 165, 165, 147, 131];
+  const pattern = state.player.fever > 0
+    ? [392, 523, 659, 784, 659, 523, 440, 523]
+    : [262, 330, 392, 523, 392, 330, 294, 330];
+  const bass = state.player.fever > 0
+    ? [196, 196, 220, 220, 247, 247, 220, 196]
+    : [131, 131, 147, 147, 165, 165, 147, 131];
   const note = pattern[state.musicStep % pattern.length];
   const low = bass[state.musicStep % bass.length];
   state.musicStep += 1;
-  playMusicNote(note, 0.08, 'square', 0.018);
+  playMusicNote(note, 0.08, 'square', state.player.fever > 0 ? 0.026 : 0.018);
   if (state.musicStep % 2 === 0) playMusicNote(low, 0.12, 'triangle', 0.012);
 }
 
@@ -757,6 +889,10 @@ function handlePointer(event) {
 }
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'Enter' && state.mode === 'start') {
+    event.preventDefault();
+    startGame();
+  }
   if (event.code === 'Space' || event.code === 'ArrowUp') {
     event.preventDefault();
     requestJump();
@@ -765,7 +901,7 @@ window.addEventListener('keydown', (event) => {
     event.preventDefault();
     togglePause();
   }
-  if (event.code === 'KeyR' && state.mode === 'gameover') {
+  if (event.code === 'KeyR' && (state.mode === 'gameover' || state.mode === 'paused' || state.mode === 'playing')) {
     event.preventDefault();
     startGame();
   }
@@ -775,7 +911,17 @@ canvas.addEventListener('pointerdown', handlePointer);
 startButton.addEventListener('click', startGame);
 resumeButton.addEventListener('click', resumeGame);
 restartButton.addEventListener('click', startGame);
+restartTopButton.addEventListener('click', startGame);
+pauseRestartButton.addEventListener('click', startGame);
+homeButton.addEventListener('click', goHome);
+pauseHomeButton.addEventListener('click', goHome);
+gameOverHomeButton.addEventListener('click', goHome);
+playerNameInput.addEventListener('input', () => {
+  playerNameInput.value = playerNameInput.value.replace(/\s+/g, ' ').slice(0, 18);
+});
 
-bestValue.textContent = state.best;
+renderLeaderboard();
+syncHud();
+setOverlay(startOverlay, true);
 requestAnimationFrame(frame);
 render();
