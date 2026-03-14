@@ -11,7 +11,7 @@ Stack Sprint is a faster, clearer one-button browser arcade runner: enter your n
   - **Magnet** — pulls sparks toward the player
   - **Double Score** — doubles passive and pickup/clear scoring for a short time
   - **Slow-Mo** — briefly eases world speed for recovery windows
-- Better mobile friendliness: the start/signup overlay is viewport-safe, scrollable, and no longer gets blocked on smaller screens
+- Better mobile friendliness: the start/signup flow now uses a bottom-sheet style card on phones, collapsible help, compact mobile stats, and a taller portrait-first play area so the canvas stays usable
 - Preserved strengths: responsive neon look, combo/fever feel, synthesized music, sound effects, and restart/home flow
 
 ## Run locally

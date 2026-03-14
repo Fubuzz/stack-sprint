@@ -1,22 +1,23 @@
 # Progress
 
 ## Plan
-- Reviewed current runner structure and reset the plan for the final improvement push
-- Targeted five lanes of change: progression, power-ups, background dynamism, mobile start flow, and light documentation refresh
+- Reset the work around a focused mobile UX pass instead of general feature iteration
+- Targeted the biggest mobile pain points: vertical space loss, blocking tutorial content, overgrown HUD, and too much non-essential chrome above the canvas
 
 ## Implement
-- Reworked run pacing around 4 explicit gameplay phases with different spawn tempos and obstacle pattern pools
-- Added new hazard variety: drone, pulse wall, denser double/high-low combinations
-- Added 4 short-duration power-ups: shield, magnet, double score, and slow-mo
-- Expanded background progression with phase-based palette changes, floating shards, layered hills, skyline motion, and HUD phase feedback
-- Improved mobile overlay behavior with scroll-safe sizing and safer small-screen spacing
-- Updated home/start copy and README to reflect the new product feel
+- Collapsed the top HUD on phones so only player + score stay in the top row, with best/rush/phase moved into a compact bottom dock
+- Converted the start overlay into a mobile bottom-sheet style card with shorter copy and a collapsible `How to play` section instead of a large always-open tutorial block
+- Increased portrait playfield priority on mobile by switching the canvas to a taller aspect ratio and trimming surrounding spacing/chrome
+- Tightened in-canvas controls/banner spacing and simplified the world HUD on small screens so it consumes less of the game view
+- Hid decorative footer pills on mobile while preserving the fuller desktop presentation
+- Updated README mobile notes
 
 ## Validate
 - `node --check app.js` ✅
-- Local static server smoke check via `python3 -m http.server 8017` + HTTP 200 fetch ✅
-- Manual browser interaction not fully available in-tool, so final UX confidence is based on code-path review plus smoke validation ⚠️
+- local static server smoke check via `python3 -m http.server 8017` + HTTP 200 ✅
+- browser/mobile snapshot review blocked because the OpenClaw browser gateway timed out in this session ⚠️
+- desktop regression risk reduced by keeping most changes behind `max-width: 760px` breakpoints ✅
 
 ## Polish
-- Keep fairness by using short-duration power-ups rather than permanent buffs
-- Keep the game understandable with phase labels, event banners, and concise HUD indicators
+- Kept desktop layout intact by scoping most changes behind mobile breakpoints
+- Preserved gameplay systems and only altered presentation / information density where needed

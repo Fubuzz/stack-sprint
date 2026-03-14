@@ -6,6 +6,9 @@ const scoreValue = document.getElementById('scoreValue');
 const bestValue = document.getElementById('bestValue');
 const comboValue = document.getElementById('comboValue');
 const phaseValue = document.getElementById('phaseValue');
+const bestDockValue = document.getElementById('bestDockValue');
+const comboDockValue = document.getElementById('comboDockValue');
+const phaseDockValue = document.getElementById('phaseDockValue');
 const finalPlayer = document.getElementById('finalPlayer');
 const finalScore = document.getElementById('finalScore');
 const finalBest = document.getElementById('finalBest');
@@ -335,16 +338,28 @@ function ensurePlayerName() {
 }
 
 function syncHud() {
+  const score = Math.floor(state.score);
+  const best = Math.floor(state.best);
+  const combo = `×${Math.max(1, state.streak + 1)}`;
+  const phaseName = currentPhase().name;
+
   playerValue.textContent = state.playerName || 'Guest';
-  scoreValue.textContent = Math.floor(state.score);
-  bestValue.textContent = Math.floor(state.best);
-  comboValue.textContent = `×${Math.max(1, state.streak + 1)}`;
-  phaseValue.textContent = currentPhase().name;
+  scoreValue.textContent = score;
+  bestValue.textContent = best;
+  comboValue.textContent = combo;
+  phaseValue.textContent = phaseName;
+  if (bestDockValue) bestDockValue.textContent = best;
+  if (comboDockValue) comboDockValue.textContent = combo;
+  if (phaseDockValue) phaseDockValue.textContent = phaseName;
   eventBanner.textContent = state.bannerText;
 }
 
 function setOverlay(overlay, visible) {
   overlay.classList.toggle('visible', visible);
+  const anyOverlayVisible = startOverlay.classList.contains('visible')
+    || pauseOverlay.classList.contains('visible')
+    || gameOverOverlay.classList.contains('visible');
+  document.body.classList.toggle('overlay-open', anyOverlayVisible);
 }
 
 function setBanner(text, duration = 2.4) {
@@ -1117,20 +1132,29 @@ function drawPopups() {
 
 function drawWorldHud() {
   if (state.mode !== 'playing') return;
-  roundRect(28, 24, 360, 132, 20, 'rgba(7,11,22,0.55)');
-  ctx.fillStyle = palette.white;
-  ctx.font = '700 18px Inter';
-  ctx.fillText('Speed', 52, 54);
-  ctx.fillText('Streak', 52, 84);
-  ctx.fillText('Phase', 52, 114);
-  ctx.fillText('Power', 52, 144);
 
+  const compactHud = window.innerWidth <= 760;
+  const hudX = compactHud ? 16 : 28;
+  const hudY = compactHud ? 84 : 24;
+  const hudW = compactHud ? 248 : 360;
+  const hudH = compactHud ? 96 : 132;
+  const labelX = compactHud ? hudX + 16 : 52;
+  const barX = compactHud ? hudX + 86 : 132;
+  const textBaseX = compactHud ? barX : 132;
+
+  roundRect(hudX, hudY, hudW, hudH, compactHud ? 18 : 20, compactHud ? 'rgba(7,11,22,0.42)' : 'rgba(7,11,22,0.55)');
+  ctx.fillStyle = palette.white;
+  ctx.font = compactHud ? '700 15px Inter' : '700 18px Inter';
+  ctx.fillText('Speed', labelX, hudY + 28);
+  ctx.fillText('Rush', labelX, hudY + 54);
+  ctx.fillText('Power', labelX, hudY + 80);
+
+  const barWidth = compactHud ? 108 : 170;
+  const topBarY = hudY + 18;
   ctx.fillStyle = palette.cyan;
-  ctx.fillRect(132, 42, Math.min(170, (state.speed - BASE_SCROLL) * 0.42 + 28), 10);
+  ctx.fillRect(barX, topBarY, Math.min(barWidth, (state.speed - BASE_SCROLL) * 0.42 + 28), 8);
   ctx.fillStyle = state.streak > 2 ? palette.gold : palette.violetSoft;
-  ctx.fillRect(132, 72, Math.min(170, state.streak * 18 + 18), 10);
-  ctx.fillStyle = currentPhase().accent;
-  ctx.fillRect(132, 102, Math.min(170, (state.phaseIndex + 1) * 38), 10);
+  ctx.fillRect(barX, topBarY + 26, Math.min(barWidth, state.streak * 18 + 18), 8);
 
   const active = [];
   if (state.player.shield > 0) active.push('Shield');
@@ -1139,9 +1163,17 @@ function drawWorldHud() {
   if (state.player.slowmo > 0) active.push('Slow');
   if (state.player.fever > 0) active.push('Fever');
 
-  ctx.font = '700 16px Inter';
+  ctx.font = compactHud ? '700 14px Inter' : '700 16px Inter';
   ctx.fillStyle = active.length ? palette.white : 'rgba(255,255,255,0.5)';
-  ctx.fillText(active.length ? active.join(' • ') : 'None active', 132, 144);
+  ctx.fillText(active.length ? active.join(' • ') : 'None active', textBaseX, hudY + 80);
+
+  if (!compactHud) {
+    ctx.fillStyle = palette.white;
+    ctx.font = '700 18px Inter';
+    ctx.fillText('Phase', 52, 114);
+    ctx.fillStyle = currentPhase().accent;
+    ctx.fillRect(132, 102, Math.min(170, (state.phaseIndex + 1) * 38), 10);
+  }
 }
 
 function roundRect(x, y, w, h, r, fillStyle) {

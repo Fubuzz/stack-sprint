@@ -38,6 +38,10 @@ body {
   overflow-y: auto;
 }
 
+body.overlay-open {
+  overflow: hidden;
+}
+
 button,
 input {
   font: inherit;
@@ -147,6 +151,10 @@ button {
   min-height: min(72vh, 820px);
 }
 
+.mobile-dock {
+  display: none;
+}
+
 canvas {
   display: block;
   width: 100%;
@@ -215,6 +223,11 @@ canvas {
   width: min(100%, 720px);
 }
 
+.hero-summary {
+  margin: -4px 0 18px;
+  color: #dce6ff;
+}
+
 .small-card {
   width: min(100%, 420px);
   text-align: center;
@@ -251,6 +264,35 @@ canvas {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.mobile-help {
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.mobile-help summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.mobile-help summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-help[open] summary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.compact-grid {
+  padding: 14px;
+  margin-bottom: 0;
 }
 
 .feature-card,
@@ -411,72 +453,203 @@ canvas {
 
 @media (max-width: 760px) {
   body {
-    padding: 12px;
+    padding: 10px 10px calc(90px + env(safe-area-inset-bottom, 0px));
   }
 
   .app-shell {
-    gap: 14px;
+    gap: 10px;
+  }
+
+  .hud-top {
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .brand-block {
+    display: grid;
+    gap: 4px;
+  }
+
+  .brand-block h1 {
+    font-size: clamp(1.65rem, 8vw, 2.25rem);
+  }
+
+  .eyebrow,
+  .tagline {
+    max-width: 100%;
+  }
+
+  .tagline {
+    font-size: 0.96rem;
+  }
+
+  .stat-row {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .stat-card {
+    min-width: 0;
+    flex: 1 1 calc(50% - 4px);
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .desktop-stat {
+    display: none;
+  }
+
+  .player-card {
+    order: -1;
   }
 
   .game-panel {
-    border-radius: 22px;
+    border-radius: 20px;
     min-height: auto;
   }
 
+  canvas {
+    aspect-ratio: 10 / 16;
+    min-height: min(68dvh, 760px);
+    object-fit: cover;
+    object-position: center;
+  }
+
   .overlay {
-    padding: 12px;
-    align-items: stretch;
+    padding: 0;
+    align-items: end;
+    background: linear-gradient(180deg, rgba(3, 5, 10, 0.08), rgba(3, 5, 10, 0.82));
   }
 
   .overlay-card {
     width: 100%;
-    max-height: calc(100dvh - 24px);
-    padding: 20px;
-    border-radius: 22px;
+    max-height: min(56dvh, 520px);
+    padding: 16px;
+    border-radius: 22px 22px 0 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    overscroll-behavior: contain;
+  }
+
+  .hero-card {
+    width: 100%;
+  }
+
+  .mobile-hero-copy h2 {
+    margin-bottom: 10px;
+    font-size: clamp(1.35rem, 6vw, 1.8rem);
+  }
+
+  .hero-summary {
+    margin-bottom: 14px;
+    font-size: 0.94rem;
+  }
+
+  .field-block {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .field-block input {
+    padding: 12px 14px;
+  }
+
+  .start-actions {
+    margin-bottom: 14px;
   }
 
   .top-actions {
-    top: 12px;
-    right: 12px;
-    left: 12px;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .top-actions button {
-    flex: 1 1 140px;
+    flex: 1 1 0;
+    padding: 11px 12px;
+    font-size: 0.92rem;
+    border-radius: 14px;
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.25);
   }
 
   .event-banner {
-    left: 12px;
-    right: 12px;
-    bottom: 72px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
     max-width: none;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    line-height: 1.35;
   }
 
   .tiny-note {
-    font-size: 0.96rem;
+    font-size: 0.88rem;
+    margin-top: 10px;
   }
 
-  .stat-card {
-    min-width: 92px;
-    flex: 1 1 44%;
+  .leaderboard-card {
+    padding: 14px;
+  }
+
+  .leaderboard-head {
+    margin-bottom: 10px;
   }
 
   .leaderboard-list li {
     grid-template-columns: auto 1fr;
+    gap: 8px;
+    padding: 8px 10px;
   }
 
   .leaderboard-list .score {
     grid-column: 2;
   }
+
+  .footer-bar {
+    display: none;
+  }
+
+  .mobile-dock {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    z-index: 8;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .dock-chip {
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 16px;
+    backdrop-filter: blur(18px);
+    background: rgba(8, 14, 28, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+  }
+
+  .dock-chip strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.overlay-open .mobile-dock {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 560px) {
-  .brand-block h1 {
-    font-size: 2.2rem;
-  }
-
   .hud-top {
     align-items: stretch;
   }
@@ -493,10 +666,33 @@ canvas {
   .primary-button,
   .secondary-button,
   .ghost-button {
-    padding: 13px 16px;
+    padding: 12px 14px;
   }
 
   .overlay-card h2 {
-    font-size: 1.9rem;
+    font-size: 1.6rem;
+  }
+
+  .mobile-help summary {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  .compact-grid {
+    padding: 12px;
+  }
+
+  .feature-card {
+    padding: 12px;
+    font-size: 0.92rem;
+  }
+
+  .dock-chip {
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .dock-chip strong {
+    font-size: 0.88rem;
   }
 }

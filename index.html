@@ -15,7 +15,7 @@
         <p class="tagline">Dash, dodge, collect, grab power-ups, and survive a lane that evolves fast instead of staying flat.</p>
       </div>
       <div class="stat-row">
-        <div class="stat-card">
+        <div class="stat-card player-card">
           <span class="label">Player</span>
           <strong id="playerValue">Guest</strong>
         </div>
@@ -23,15 +23,15 @@
           <span class="label">Score</span>
           <strong id="scoreValue">0</strong>
         </div>
-        <div class="stat-card">
+        <div class="stat-card desktop-stat">
           <span class="label">Best</span>
           <strong id="bestValue">0</strong>
         </div>
-        <div class="stat-card combo-card">
+        <div class="stat-card combo-card desktop-stat">
           <span class="label">Rush</span>
           <strong id="comboValue">x1</strong>
         </div>
-        <div class="stat-card phase-card">
+        <div class="stat-card phase-card desktop-stat">
           <span class="label">Phase</span>
           <strong id="phaseValue">Neon Warmup</strong>
         </div>
@@ -50,36 +50,42 @@
 
       <div class="overlay visible" id="startOverlay">
         <div class="overlay-card hero-card">
-          <p class="overlay-kicker">Arcade runner</p>
-          <h2>Enter your name. Hit the lane. Survive a city that ramps up around you.</h2>
+          <div class="mobile-hero-copy">
+            <p class="overlay-kicker">Arcade runner</p>
+            <h2>Enter your name. Hit the lane. Survive a city that ramps up around you.</h2>
+            <p class="hero-summary">Mobile-first now: bigger play area, lighter chrome, and help that stays out of your way.</p>
+          </div>
 
           <label class="field-block" for="playerNameInput">
             <span>Player name</span>
             <input id="playerNameInput" type="text" maxlength="18" placeholder="Ahmed" autocomplete="nickname" />
           </label>
 
-          <div class="feature-grid">
-            <div class="feature-card">
-              <span>Jump</span>
-              Space / click / tap
-            </div>
-            <div class="feature-card">
-              <span>Dodge</span>
-              Crates and barriers arrive in seconds
-            </div>
-            <div class="feature-card">
-              <span>Reward loop</span>
-              Sparks, clears, fever, and power-ups stack into bigger scores
-            </div>
-            <div class="feature-card">
-              <span>Power-ups</span>
-              Shield, magnet, double score, and slow-mo can flip a run
-            </div>
-          </div>
-
-          <div class="button-row">
+          <div class="button-row start-actions">
             <button id="startButton" class="primary-button">Start Run</button>
           </div>
+
+          <details class="mobile-help">
+            <summary>How to play</summary>
+            <div class="feature-grid compact-grid">
+              <div class="feature-card">
+                <span>Jump</span>
+                Space / click / tap
+              </div>
+              <div class="feature-card">
+                <span>Dodge</span>
+                Crates and barriers arrive in seconds
+              </div>
+              <div class="feature-card">
+                <span>Reward loop</span>
+                Sparks, clears, fever, and power-ups stack into bigger scores
+              </div>
+              <div class="feature-card">
+                <span>Power-ups</span>
+                Shield, magnet, double score, and slow-mo can flip a run
+              </div>
+            </div>
+          </details>
 
           <div class="leaderboard-card">
             <div class="leaderboard-head">
@@ -89,7 +95,7 @@
             <ol id="leaderboardList" class="leaderboard-list"></ol>
           </div>
 
-          <p class="tiny-note">Press P or Esc anytime to pause. On phones the start card now scrolls cleanly instead of getting blocked.</p>
+          <p class="tiny-note">Press P or Esc anytime to pause. On phones, help is tucked into a collapsible panel so the game area stays visible.</p>
         </div>
       </div>
 
@@ -126,6 +132,21 @@
       <div class="pill">Evolving run phases</div>
       <div class="pill">Power-up variety</div>
       <div class="pill accent">Responsive arcade sprint</div>
+    </section>
+
+    <section class="mobile-dock" aria-label="Compact mobile run stats">
+      <div class="dock-chip">
+        <span class="label">Best</span>
+        <strong id="bestDockValue">0</strong>
+      </div>
+      <div class="dock-chip combo-card">
+        <span class="label">Rush</span>
+        <strong id="comboDockValue">x1</strong>
+      </div>
+      <div class="dock-chip phase-card">
+        <span class="label">Phase</span>
+        <strong id="phaseDockValue">Neon Warmup</strong>
+      </div>
     </section>
   </main>
 
