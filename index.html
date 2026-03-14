@@ -12,7 +12,7 @@
       <div class="brand-block">
         <p class="eyebrow">Night Game #2</p>
         <h1>Stack Sprint</h1>
-        <p class="tagline">Dash, dodge, collect, and survive the neon lane. Fun starts immediately now.</p>
+        <p class="tagline">Dash, dodge, collect, grab power-ups, and survive a lane that evolves fast instead of staying flat.</p>
       </div>
       <div class="stat-row">
         <div class="stat-card">
@@ -31,6 +31,10 @@
           <span class="label">Rush</span>
           <strong id="comboValue">x1</strong>
         </div>
+        <div class="stat-card phase-card">
+          <span class="label">Phase</span>
+          <strong id="phaseValue">Neon Warmup</strong>
+        </div>
       </div>
     </section>
 
@@ -47,7 +51,7 @@
       <div class="overlay visible" id="startOverlay">
         <div class="overlay-card hero-card">
           <p class="overlay-kicker">Arcade runner</p>
-          <h2>Enter your name. Hit the lane. Chase the leaderboard.</h2>
+          <h2>Enter your name. Hit the lane. Survive a city that ramps up around you.</h2>
 
           <label class="field-block" for="playerNameInput">
             <span>Player name</span>
@@ -65,11 +69,11 @@
             </div>
             <div class="feature-card">
               <span>Reward loop</span>
-              Sparks boost streak and score multipliers
+              Sparks, clears, fever, and power-ups stack into bigger scores
             </div>
             <div class="feature-card">
-              <span>Goal</span>
-              Last long enough to post a named run
+              <span>Power-ups</span>
+              Shield, magnet, double score, and slow-mo can flip a run
             </div>
           </div>
 
@@ -85,7 +89,7 @@
             <ol id="leaderboardList" class="leaderboard-list"></ol>
           </div>
 
-          <p class="tiny-note">Press P or Esc anytime to pause. Named scores save on this browser.</p>
+          <p class="tiny-note">Press P or Esc anytime to pause. On phones the start card now scrolls cleanly instead of getting blocked.</p>
         </div>
       </div>
 
@@ -119,7 +123,8 @@
 
     <section class="footer-bar">
       <div class="pill">Named leaderboard</div>
-      <div class="pill">Immediate obstacles</div>
+      <div class="pill">Evolving run phases</div>
+      <div class="pill">Power-up variety</div>
       <div class="pill accent">Responsive arcade sprint</div>
     </section>
   </main>

@@ -2,7 +2,7 @@
   color-scheme: dark;
   --bg: #070b16;
   --panel: rgba(10, 16, 30, 0.72);
-  --panel-strong: rgba(9, 14, 28, 0.9);
+  --panel-strong: rgba(9, 14, 28, 0.92);
   --line: rgba(255, 255, 255, 0.08);
   --text: #f4f7ff;
   --muted: #92a2c6;
@@ -96,7 +96,7 @@ button {
 
 .tagline {
   margin-top: 6px;
-  max-width: 38rem;
+  max-width: 42rem;
   color: #b9c7e6;
 }
 
@@ -126,11 +126,15 @@ button {
 }
 
 .stat-card strong {
-  font-size: 1.45rem;
+  font-size: 1.18rem;
 }
 
 .combo-card strong {
   color: var(--gold);
+}
+
+.phase-card strong {
+  color: var(--cyan);
 }
 
 .game-panel {
@@ -166,11 +170,11 @@ canvas {
   left: 20px;
   bottom: 20px;
   z-index: 3;
-  max-width: min(70%, 460px);
+  max-width: min(72%, 520px);
   padding: 12px 16px;
   border-radius: 16px;
   color: #e7eeff;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .overlay {
@@ -179,7 +183,7 @@ canvas {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(180deg, rgba(3, 5, 10, 0.22), rgba(3, 5, 10, 0.72));
+  background: linear-gradient(180deg, rgba(3, 5, 10, 0.22), rgba(3, 5, 10, 0.78));
   opacity: 0;
   pointer-events: none;
   transition: opacity 180ms ease;
@@ -193,23 +197,26 @@ canvas {
 
 .overlay-card {
   width: min(100%, 560px);
+  max-height: min(100%, calc(100dvh - 48px));
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 28px;
   padding: 28px;
-  background: rgba(8, 14, 28, 0.9);
+  background: var(--panel-strong);
 }
 
 .overlay-card h2 {
   margin: 10px 0 18px;
   font-size: clamp(1.8rem, 4vw, 2.7rem);
-  line-height: 1;
+  line-height: 1.02;
 }
 
 .hero-card {
-  width: min(100%, 700px);
+  width: min(100%, 720px);
 }
 
 .small-card {
-  width: min(100%, 400px);
+  width: min(100%, 420px);
   text-align: center;
 }
 
@@ -416,13 +423,19 @@ canvas {
     min-height: auto;
   }
 
+  .overlay {
+    padding: 12px;
+    align-items: stretch;
+  }
+
   .overlay-card {
-    padding: 22px;
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 20px;
     border-radius: 22px;
   }
 
   .top-actions {
-    inset: auto 12px 12px 12px;
     top: 12px;
     right: 12px;
     left: 12px;
@@ -456,5 +469,34 @@ canvas {
 
   .leaderboard-list .score {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand-block h1 {
+    font-size: 2.2rem;
+  }
+
+  .hud-top {
+    align-items: stretch;
+  }
+
+  .stat-row {
+    width: 100%;
+  }
+
+  .button-row,
+  .button-stack {
+    gap: 10px;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .ghost-button {
+    padding: 13px 16px;
+  }
+
+  .overlay-card h2 {
+    font-size: 1.9rem;
   }
 }

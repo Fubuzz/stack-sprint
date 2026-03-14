@@ -1,15 +1,18 @@
 # Stack Sprint
 
-Stack Sprint is now a faster, clearer one-button browser arcade runner: enter your name, dodge incoming hazards within the first seconds, collect sparks, build a streak, and post a named score to the local leaderboard.
+Stack Sprint is a faster, clearer one-button browser arcade runner: enter your name, dodge incoming hazards, collect sparks, stack combos, grab run-changing power-ups, and post a named score to the local leaderboard.
 
-## What's improved in this fix pass
-- Proper home/start flow with player name entry before a run begins
-- Local named leaderboard (top 5 runs saved in `localStorage`)
-- Immediate gameplay pressure: crates and hazards spawn almost instantly
-- Clearer reward loop: obstacle clears + spark pickups build streak and temporary fever scoring
-- Visible restart and quit/home buttons in gameplay, pause, and game-over states
-- Responsive polished UI for desktop and mobile play
-- Synthesized sound effects and reactive chiptune-style music via Web Audio
+## What's improved in this v2 improvement pass
+- Noticeably less monotonous runs through **4 escalating phases**: Neon Warmup, Rush Hour, Sky Bridge, and Overdrive
+- Clear challenge evolution within the first minute via denser spawn pacing, mixed obstacle patterns, and phase callouts
+- More dynamic world feel with shifting phase palettes, glowing sky orb, floating shards, layered hills, and livelier skyline motion
+- New meaningful power-ups beyond speed:
+  - **Shield** — saves you from one collision
+  - **Magnet** — pulls sparks toward the player
+  - **Double Score** — doubles passive and pickup/clear scoring for a short time
+  - **Slow-Mo** — briefly eases world speed for recovery windows
+- Better mobile friendliness: the start/signup overlay is viewport-safe, scrollable, and no longer gets blocked on smaller screens
+- Preserved strengths: responsive neon look, combo/fever feel, synthesized music, sound effects, and restart/home flow
 
 ## Run locally
 Because the game is fully static, you can open `index.html` directly in a browser.
@@ -34,13 +37,15 @@ npx serve .
 - **Restart:** `R` or click a visible restart button
 - **Quit to home:** Click **Quit / Home**
 
-## Scoring and leaderboard
+## Scoring and progression
 - You must enter a player name before starting so runs can be saved properly
 - Clearing obstacles awards bonus score and builds your streak
-- Collecting sparks boosts the streak and can trigger a temporary fever score boost
-- Surviving longer increases speed and passive score gain
+- Collecting sparks boosts the streak and can trigger temporary fever scoring
+- Power-ups create short tactical windows instead of only raw speed boosts
+- Surviving longer moves the run through visible phases with tougher patterns and stronger atmosphere
 - Top 5 named scores are stored locally in the browser only
 
 ## Notes
 - Audio starts after the first user interaction because browsers block autoplay by default
 - Leaderboard data and last-used player name are stored per browser via `localStorage`
+- The game is designed to remain understandable and fair even as phases intensify

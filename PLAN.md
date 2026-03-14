@@ -1,29 +1,31 @@
-# Stack Sprint Fix Pass Plan
+# Stack Sprint v2 Improvement Pass Plan
 
 ## Objective
-Repair Stack Sprint so gameplay becomes interactive and fun within the first few seconds, add a proper player-name entry/start flow with a named leaderboard, provide obvious restart/home controls, and preserve polished responsive presentation.
+Push Stack Sprint from a decent arcade runner to a noticeably more varied, dynamic, mobile-friendly experience without losing the strong neon feel, audio, combo loop, and sprint identity.
 
 ## Scope
-- Inspect current single-page game architecture
-- Rework gameplay pacing and event/obstacle loop
-- Add menu/start screen with player name input
-- Improve score + leaderboard UX around named entries
-- Add restart and quit/home controls in the right states
-- Update README if behavior/setup notes changed
+- Make runs evolve clearly within the first minute
+- Add gameplay variety via pacing phases, hazard mixes, and lane event changes
+- Introduce multiple meaningful power-ups beyond raw speed
+- Upgrade background/world progression so each run feels more alive
+- Fix the signup/start overlay for mobile screens
+- Refresh README if needed
 - Commit locally for Watchdog review
 
 ## Files Likely To Change
-- `index.html`
-- `style.css`
 - `app.js`
+- `style.css`
+- `index.html`
 - `README.md`
+- `PROGRESS.md`
 
-## Risks / Unknowns
-- Existing game loop may be tightly coupled and need a larger refactor
-- Need to keep visuals polished while making mechanics more legible
-- No automated test suite; validation will rely on smoke testing and code sanity checks
+## Key Risks / Unknowns
+- Single-file game logic can get messy if power-ups and progression are bolted on carelessly
+- Need to preserve fairness while increasing variety
+- No automated gameplay test suite, so validation is mostly syntax + manual smoke reasoning
 
 ## Validation Plan
-- Static JS syntax check
-- Manual game-flow verification: home/name entry → start → immediate interaction → score feedback → hit obstacle/game over → leaderboard name save → restart/home
-- Responsive spot check in browser
+- `node --check app.js`
+- Serve locally and verify files load
+- Spot-check progression logic via code review and lightweight runtime smoke checks
+- Ensure mobile overlay CSS uses viewport-safe sizing and scrollable card behavior
